@@ -9,3 +9,8 @@ To-Do List :
 Design Inspriration :
 http://www.behance.net/gallery/Kneadabaker/2641185
 Need Feedback from Toan Vu 
+
+Dictonary 28 Tabels 
+
+To-Do List : 
+- Anh Nguyen : Website for crawlring Research 
