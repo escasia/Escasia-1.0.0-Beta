@@ -9,39 +9,17 @@ class Application_Model_Crawlers_CrawlerD {
 		$this->site = "http://hannover.prinz.de/restaurants/top-ten-restaurants/asiatische-restaurants";
 		$this->links = array();
 	}
-	
-	public function getLinks($html){
-		$div = explode('<div class="teaserContent_w61">', $html);
-		for($i = 0; $i<count($div); $i++){
-			if($i > 0){
-				$link = substr($div[$i],strpos($div[$i], "http://"),strpos($div[$i],".html")-9);
-				$this->links[] = $link;
-				//echo $link." <br/>";
-				//get content of second link
-				$this->extractArticle($link);		
-			} 
-		}
-		echo $this->sql;
-	}
-	
-	public function extractArticle($link){		
-		 $content = $this->loadPage($link);
-		 		 
-		 //get artilce
-		 $article = explode('<div class="artikel"', $content);
-		 var_dump($article);
 		
-//		for($i = 0; $i<count($article); $i++){
-//			if($i > 1){
-////				$this->sql .= "article number: ".$i." : <br/>";
-////				$this->sql .= "type : ".$this->getArticleType($article[$i])."<br/>";
-////				echo "name: ".$this->getArticleType($article[$i])." <br/>";
-//////				echo "contact: ".$this->getArticleContact($article[$i])." <br/>";
-//////				echo "imglinks : ".$this->getArticleImage($article[$i])." <br/>";
-//////				echo "Description: ".$this->getArticleDescription($article[$i])." <br/>";
-////				echo "next article ..................................................<br/>";		
-//			} 
-//		}
+	public function extractArticle($link){	
+		$html = $this->loadPage($link);	
+		$xml=new DOMDocument();
+		$xml->loadHtml($html);
+		$xpath = new DOMXPath($xml);
+		//$this->getArticleType($xml, $xpath);
+//		$this->getArticleContact($xml, $xpath);
+//		$this->getArticleDescription($xml, $xpath);
+//		$this->getArticleImage($xml, $xpath);
+//		$this->getArticleName($xml, $xpath);
 	}
 	
 	private function getLinksByXML($html){
@@ -49,29 +27,28 @@ class Application_Model_Crawlers_CrawlerD {
 		$xml->loadHtml($html);
 		$xpath = new DOMXPath($xml);
 		$result = '';
-		foreach($xpath->query('//div[@class="teaser_img_text_w61"]/*') as $node) {
-			while($node->hasChildNodes()){
-				$child = $node->removeChild();
-				
-			}
-		    $result .= $xml->saveXML($node);
-		}
-		var_dump($result);
-		
+		$prefNode = $xpath->query('//div[@class="teaserContent_w61"]/a',$xml);
+		for($i = 0; $i<$prefNode->length; $i++){
+			$link = $prefNode->item($i)->attributes->item(0)->nodeValue;			
+			$this->links[] = $link;			
+		}		
 	}
 	
-	public function getArticleType($artText){
-		$startPos = strpos($artText, '<div <h2 class="schwarz">');
-		$endPos = strpos($artText, '</h2>');
-		$name = substr($artText, $start+20,$endPos-5);
-		return $name;
+	public function getArticleType($xml,$xpath){
+		$result = '';
+		$prefNode = $xpath->query('//div[@class="divHeaderFb"]/h2',$xml);
+		for($i = 0; $i<$prefNode->length; $i++){
+			$link = $prefNode->item($i)->attributes->item(0)->nodeValue;
+			echo "--------type: ".$i.$prefNode->item(0)->nodeValue." <br/>";
+			
+		}
 	}
 	
 	/**
 	 * get restaurant's name from html code	 
 	 * @param unknown_type $artText
 	 */
-	private function getArticleName($artText){
+	private function getArticleName($xml,$xpath){
 		$startPos = strpos($artText, '<h1 class="special_ff" property="v:name">');
 		$endPos = strpos($artText, '</h1>');
 		$name = substr($artText, $start,$endPos);
@@ -83,7 +60,7 @@ class Application_Model_Crawlers_CrawlerD {
 	 * get contact from html code
 	 * @param unknown_type $artText
 	 */
-	private function getArticleContact($artText){
+	private function getArticleContact($xml,$xpath){
 		$startPos = strpos($artText, '<span typeof="v:Address">');
 		$endPos = strpos($artText, '</span>');
 		$address = substr($artText, $start,$endPos,3);
@@ -95,7 +72,7 @@ class Application_Model_Crawlers_CrawlerD {
 	 * get image from html code
 	 * @param unknown_type $artText
 	 */
-	private function getArticleImage($artText){
+	private function getArticleImage($xml,$xpath){
 		$startPos = strpos($artText, '<h1 class="special_ff" property="v:name">');
 		$endPos = strpos($artText, '</h1>');
 		$div = substr($artText, $start,$endPos);
@@ -110,7 +87,7 @@ class Application_Model_Crawlers_CrawlerD {
 	 * get description from html code	 
 	 * @param unknown_type $artText
 	 */
-	private function getArticleDescription($artText){
+	private function getArticleDescription($xml,$xpath){
 		$startPos = strpos($artText, '<div class="bodyText>"');
 		$endPos = strpos($artText, '</div>');
 		$des = substr($artText, $start,$endPos);
@@ -120,9 +97,14 @@ class Application_Model_Crawlers_CrawlerD {
 	
 	
 	public function extractHTML($link){
-		$content = $this->loadPage($link);	
-//		$this->getLinks($content
+		$content = $this->loadPage($link);
 		$this->getLinksByXML($content);
+		$i = 0;
+		foreach ($this->links as $link) {
+			echo "link ".$i. "<br/>";
+			$this->extractArticle($link);
+			$i++;
+		}
 	}
 	
 	/**
